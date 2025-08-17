@@ -1,5 +1,6 @@
 package com.task.employeemanagement.auth.filter;
 
+import com.task.employeemanagement.auth.entity.JWTToken;
 import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.auth.repository.JWTTokenRepository;
 import com.task.employeemanagement.users.repository.UserRepository;
@@ -26,38 +27,54 @@ public class JWTAuthFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
     private final JWTTokenRepository jwtTokenRepository;
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String username;
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
-        jwt = authHeader.substring(7);
-        username = jwtService.extractUsername(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        String token = authorizationHeader.substring(7);
+        String extractedUsername;
+        try {
+            extractedUsername = jwtService.extractUsername(token);
+        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            var userOpt = userRepository.findByUsername(username);
-            if (userOpt.isEmpty()) {
+        if (extractedUsername != null
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+           User user =
+                    userRepository.findByUsername(extractedUsername);
+            if (user == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            User user = userOpt.get();
 
-            var tokenOpt = jwtTokenRepository.findByToken(jwt);
-            if (tokenOpt.isEmpty() || tokenOpt.get().isExpired()) {
+            JWTToken storedToken =
+                    jwtTokenRepository.findByToken(token);
+            if (storedToken == null || storedToken.isExpired()) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            if (jwtService.isTokenValid(jwt, user)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            if (jwtService.isTokenValid(token, user)) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                user.getAuthorities()
+                        );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 

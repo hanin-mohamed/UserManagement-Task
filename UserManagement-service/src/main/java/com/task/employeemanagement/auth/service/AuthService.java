@@ -4,6 +4,7 @@ import com.task.employeemanagement.common.dto.AuthResponse;
 import com.task.employeemanagement.common.dto.LoginRequest;
 import com.task.employeemanagement.common.dto.RegisterRequest;
 import com.task.employeemanagement.auth.entity.JWTToken;
+import com.task.employeemanagement.common.exception.custom.DuplicateResourceException;
 import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.auth.repository.JWTTokenRepository;
 import com.task.employeemanagement.users.repository.UserRepository;
@@ -26,9 +27,9 @@ public class AuthService {
 
     public Void register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email()))
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         if (userRepository.existsByUsername(request.username()))
-            throw new IllegalArgumentException("Username already exists");
+            throw new DuplicateResourceException("Username already exists");
 
         User user = User.builder()
                 .username(request.username())
@@ -43,9 +44,9 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
-
+        User user = userRepository.findByUsername(request.username());
+        if (user == null)
+            throw new BadCredentialsException("User Not Found");
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new BadCredentialsException("Password Not Match ");
         return getToken(user);

@@ -3,12 +3,15 @@ package com.task.employeemanagement.users.service;
 import com.task.employeemanagement.common.dto.UserCreateRequest;
 import com.task.employeemanagement.common.dto.UserResponse;
 import com.task.employeemanagement.common.dto.UserUpdateRequest;
+import com.task.employeemanagement.common.exception.custom.DuplicateResourceException;
+import com.task.employeemanagement.common.exception.custom.NotFoundException;
 import com.task.employeemanagement.users.mapper.UserMapper;
 import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,14 +27,25 @@ public class UserService {
     @Transactional
     public UserResponse addUser(UserCreateRequest dto) {
         if (repo.existsByEmail(dto.email()))
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         if (repo.existsByUsername(dto.username()))
-            throw new IllegalArgumentException("Username already exists");
+            throw new DuplicateResourceException("Username already exists");
 
         User entity = mapper.toEntity(dto);
         entity.setPassword(passwordEncoder.encode(dto.password()));
         User saved = repo.save(entity);
         return mapper.toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> listUsers(Pageable pageable) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof com.task.employeemanagement.users.entity.User current)) {
+            throw new IllegalStateException("Unauthenticated");
+        }
+        Long currentUserId = current.getId();
+        return repo.findByIdNot(currentUserId, pageable)
+                .map(mapper::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -42,21 +56,21 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         User user = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         return mapper.toResponse(user);
     }
 
     @Transactional
     public UserResponse updateUserDetails(Long id, UserUpdateRequest dto) {
         User user = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         user.setSalary(dto.salary());
         return mapper.toResponse(user);
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        if (!repo.existsById(id)) throw new IllegalArgumentException("User not found");
+        if (!repo.existsById(id)) throw new NotFoundException("User not found");
         repo.deleteById(id);
     }
 }

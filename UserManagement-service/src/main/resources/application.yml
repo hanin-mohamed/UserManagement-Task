@@ -34,6 +34,8 @@ app:
       login-uri: '/login'
     users:
       base-uri: '/users'
+      get-users-uri: '/all'
       get-user-uri: '/{id}'
       delete-user-uri: '/{id}'
       update-user-uri: '/{id}'
+      export-users-uri: '/export'
