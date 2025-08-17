@@ -5,6 +5,7 @@ import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.auth.repository.JWTTokenRepository;
 import com.task.employeemanagement.users.repository.UserRepository;
 import com.task.employeemanagement.auth.service.JWTService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +42,7 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         String extractedUsername;
         try {
             extractedUsername = jwtService.extractUsername(token);
-        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             filterChain.doFilter(request, response);
             return;
         }

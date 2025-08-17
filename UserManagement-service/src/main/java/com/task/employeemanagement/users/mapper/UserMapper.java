@@ -18,9 +18,5 @@ public interface UserMapper {
     })
     User toEntity(UserCreateRequest dto);
 
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "salary", source = "salary")
-    void update(@MappingTarget User entity, UserUpdateRequest dto);
-
     UserResponse toResponse(User entity);
 }

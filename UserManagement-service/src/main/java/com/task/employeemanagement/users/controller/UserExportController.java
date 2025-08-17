@@ -1,9 +1,12 @@
 package com.task.employeemanagement.users.controller;
 
+import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.users.service.UserExportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -19,22 +22,22 @@ public class UserExportController {
 
     @GetMapping("/export")
     public ResponseEntity<Resource> exportUsersExcel(
-            @org.springframework.security.core.annotation.AuthenticationPrincipal
-            com.task.employeemanagement.users.entity.User current) throws IOException {
+            @AuthenticationPrincipal
+            User current) throws IOException {
 
         byte[] bytes = exportService.exportUsersExcel(current.getId());
 
         String filename = "users-" +
-                java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) +
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) +
                 ".xlsx";
 
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + filename + "\"")
-                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
-                .body(new org.springframework.core.io.ByteArrayResource(bytes));
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(new ByteArrayResource(bytes));
     }
 
 }

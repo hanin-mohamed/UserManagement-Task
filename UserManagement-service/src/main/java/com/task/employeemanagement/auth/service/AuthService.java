@@ -25,7 +25,7 @@ public class AuthService {
     private final JWTService jwtService;
     private final JWTTokenRepository jwtTokenRepository;
 
-    public Void register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email()))
             throw new DuplicateResourceException("Email already exists");
         if (userRepository.existsByUsername(request.username()))
@@ -39,8 +39,6 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-
-        return null;
     }
 
     public AuthResponse login(LoginRequest request) {
