@@ -2,6 +2,7 @@ package com.task.employeemanagement.users.controller;
 
 import com.task.employeemanagement.common.dto.*;
 import com.task.employeemanagement.users.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 
 @RestController
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("${app.endpoints.users.base-uri}")
 public class UserController {
 

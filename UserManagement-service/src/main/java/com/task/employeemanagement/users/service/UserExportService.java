@@ -5,6 +5,8 @@ import com.task.employeemanagement.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -19,8 +21,11 @@ public class UserExportService {
 
     private final UserRepository userRepository;
 
-    public byte[] exportUsersExcel(Long currentUserId) throws IOException {
-        List<User> users = userRepository.findByIdNot(currentUserId);
+    public byte[] exportUsersExcel() throws IOException {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        List<User> users = userRepository.findByIdNot(currentUser.getId());
 
         Workbook wb = new XSSFWorkbook();
         ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -2,6 +2,11 @@ package com.task.employeemanagement.users.controller;
 
 import com.task.employeemanagement.users.entity.User;
 import com.task.employeemanagement.users.service.UserExportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -20,12 +25,16 @@ public class UserExportController {
 
     private final UserExportService exportService;
 
-    @GetMapping("/export")
-    public ResponseEntity<Resource> exportUsersExcel(
-            @AuthenticationPrincipal
-            User current) throws IOException {
+    @GetMapping("${app.endpoints.users.export-users-uri}")
+    @Operation(summary = "Export users to Excel")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            schema = @Schema(type = "string", format = "binary")))
+    })
+    public ResponseEntity<Resource> exportUsersExcel() throws IOException {
 
-        byte[] bytes = exportService.exportUsersExcel(current.getId());
+        byte[] bytes = exportService.exportUsersExcel();
 
         String filename = "users-" +
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) +
